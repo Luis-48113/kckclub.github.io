@@ -91,16 +91,19 @@ function renderSites() { $("#sites-grid").innerHTML = unlockedSites.map((site, i
 function openGame(name) {
   const game = [...games, ...userGames].find((item) => item.name === name);
   if (!game) return;
+  $("#game-window").classList.remove("minimized");
   $("#window-title").textContent = game.name;
   const gameUrl = game.localRoute || upstream + game.route;
   const openGameTab = () => window.open(gameUrl, "_blank", "noopener");
   $("#open-game-tab").onclick = openGameTab;
   $("#fallback-game-tab").onclick = openGameTab;
   $("#open-source").onclick = () => window.open(game.user ? "about:blank" : game.source || `https://github.com/Reeyuki/YukiOS/blob/main${game.route}`, "_blank", "noopener");
-  const frame = $("#game-frame"); frame.classList.add("loading"); $("#game-fallback").classList.add("hidden"); $("#game-loader").textContent = game.user ? "Loading local game..." : "Loading game..."; frame.src = gameUrl;
+  const frame = $("#game-frame"); const externalGame = !game.user && /^https?:/.test(gameUrl); frame.classList.add("loading"); $("#game-loader").classList.toggle("hidden", externalGame); $("#game-fallback").classList.toggle("hidden", !externalGame); $("#game-fallback strong").textContent = externalGame ? "This hosted game opens in a separate tab." : "This game blocked the in-app window."; frame.src = externalGame ? "about:blank" : gameUrl;
   frame.onload = () => frame.classList.remove("loading"); frame.onerror = () => { frame.classList.add("loading"); $("#game-loader").classList.add("hidden"); $("#game-fallback").classList.remove("hidden"); }; $("#game-window").classList.remove("hidden");
 }
-function closeGame() { $("#game-window").classList.add("hidden"); $("#game-frame").src = "about:blank"; }
+function closeGame() { $("#game-window").classList.add("hidden"); $("#game-window").classList.remove("minimized", "maximized"); $("#game-frame").src = "about:blank"; }
+function minimizeGame() { $("#game-window").classList.add("minimized"); }
+function toggleMaximizeGame() { $("#game-window").classList.toggle("maximized"); $("#maximize-game").textContent = $("#game-window").classList.contains("maximized") ? "❐" : "□"; }
 function closeMenu() { $("#system-menu").classList.add("hidden"); }
 const CHAT_WORKER_URL = "https://yuki-club-chat.gx8nz7qrdr.workers.dev/chat/general";
 const CHAT_DB_KEY = "yuki-chat-local-messages";
@@ -159,6 +162,6 @@ document.querySelectorAll(".filter").forEach((button) => button.addEventListener
 $("#apple-menu").addEventListener("click", () => $("#system-menu").classList.toggle("hidden"));
 $("#chat-app").addEventListener("click", openChat); $("#close-chat").addEventListener("click", closeChat); $("#name-form").addEventListener("submit", (event) => { event.preventDefault(); setChatName($("#name-input").value); }); $("#chat-change-name").addEventListener("click", () => { $("#name-input").value = localStorage.getItem(CHAT_NAME_KEY) || ""; $("#name-modal").classList.remove("hidden"); $("#name-input").focus(); }); $("#chat-form").addEventListener("submit", (event) => { event.preventDefault(); sendChatMessage($("#chat-input").value); $("#chat-input").value = ""; });
 $("#steam-app").addEventListener("click", openSteam); $("#games-folder").addEventListener("click", openSteam); $("#sites-app").addEventListener("click", openSites); $("#notes-app").addEventListener("dblclick", () => alert("club_notes.txt\\n\\nbring snacks\\nno spoilers\\nloser picks next game")); $("#close-steam").addEventListener("click", closeSteam); $("#close-sites").addEventListener("click", closeSites);
-$("#menu-lock").addEventListener("click", lock); $("#menu-exit").addEventListener("click", lock); $("#lock-button").addEventListener("click", lock); $("#close-game").addEventListener("click", closeGame);
+$("#menu-lock").addEventListener("click", lock); $("#menu-exit").addEventListener("click", lock); $("#lock-button").addEventListener("click", lock); $("#close-game").addEventListener("click", closeGame); $("#minimize-game").addEventListener("click", minimizeGame); $("#maximize-game").addEventListener("click", toggleMaximizeGame);
 document.querySelectorAll(".dock-icon").forEach((button) => button.addEventListener("click", () => { const action = button.dataset.action; if (action === "lock") lock(); if (action === "search") { $("#game-search").focus(); $("#game-search").scrollIntoView({ behavior: "smooth", block: "center" }); } if (action === "activity") window.scrollTo({ top: 0, behavior: "smooth" }); }));
 document.addEventListener("keydown", (event) => { if (event.key === "Escape") { closeGame(); closeMenu(); closeSteam(); closeSites(); closeChat(); $("#name-modal").classList.add("hidden"); } });
